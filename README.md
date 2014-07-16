@@ -3,6 +3,8 @@ PyJSONSerialization
 
 This is a small library which serializes python objects to readable JSON files.
 
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=toubs&url=https://github.com/Toubs/PyJSONSerialization&title=PyJSONSerialization Library&tags=github&category=software)
+
 ###Example:
 
 ```python
@@ -28,6 +30,7 @@ class Test3(object):
 		self.boolean = True
 
 test1 = Test1()
-test1Json = dump(t) # Outputs: '{"null": null, "type": "Test1", "two": {"2": {"test3": {"integer": 123, "boolean": true, ...
+test1Json = dump(t)
+print test1Json # Outputs: '{"null": null, "type": "Test1", "two": {"2": {"test3": {"integer": 123, "boolean": true, ...
 print load(test1Json, globals()).two["2"] # Outputs: <__main__.Test2 object at 0x7fa4a4bf1250>
 ```
