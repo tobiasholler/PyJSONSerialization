@@ -2,6 +2,26 @@ import json
 import importlib
 from enum import Enum
 
+class My:
+  pass
+
+__my = My()  # "__my" will contain all module-level values
+__my.type_field = "type"
+__my.skip_nulls = False
+
+"""
+Changes the name of the JSON-field used to store the object-type and/or.
+By default "type" will be used as type_field if this function is not called.
+Arguments:
+- type_field : the name of the field to use
+- skip_nulls : whether to skip null-values (i.e. "None") from JSON output
+"""
+def set_flags(type_field=None,skip_nulls=None):
+	if type_field != None:
+		__my.type_field = type_field
+	if skip_nulls != None:
+		__my.skip_nulls = skip_nulls
+
 """
 Parses a python object from a JSON string.
 Every object which should be loaded needs a constuctor that takes no arguments.
@@ -16,8 +36,8 @@ def load(jsonString, module):
 			for item in d:
 				l.append(_load(item, module))
 			return l
-		elif isinstance(d, dict) and "type" in d: #object
-			t = d["type"]
+		elif isinstance(d, dict) and __my.type_field in d: #object
+			t = d[__my.type_field]
 			try:
 				mod = importlib.import_module(module)
 				cls = getattr(mod, t)
@@ -27,7 +47,7 @@ def load(jsonString, module):
 			except TypeError as e:
 				raise TypeError("Make sure there is a constuctor that doesn't take any arguments (class: %s)" % t)
 			for key in d:
-				if key != "type":
+				if key != __my.type_field:
 					setattr(o, key, _load(d[key], module))
 			return o
 		elif isinstance(d, dict): #dict
@@ -56,7 +76,8 @@ def dump(obj):
 		elif isinstance(obj, dict): #dict
 			rd = {}
 			for key in obj:
-				rd[key] = _dump(obj[key])
+				if obj[key] != None or not __my.skip_nulls:
+					rd[key] = _dump(obj[key])
 			return rd
 		elif isinstance(obj, str) or isinstance(obj, int) or \
 		     isinstance(obj, float) or isinstance(obj, complex) or \
@@ -64,9 +85,10 @@ def dump(obj):
 			return obj
 		else: #object
 			d = {}
-			d["type"] = obj.__class__.__name__
+			d[__my.type_field] = obj.__class__.__name__
 			for key in obj.__dict__:
-				d[key] = _dump(obj.__dict__[key])
+				if obj.__dict__[key] != None or not __my.skip_nulls:
+					d[key] = _dump(obj.__dict__[key])
 			return d
 	return json.dumps(_dump(obj))
 
