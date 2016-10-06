@@ -1,8 +1,14 @@
 import json
-from datetime import datetime
+import importlib
+from enum import Enum
 
-"""Parses a python object from a JSON string. Every Object which should be loaded needs a constuctor that doesn't need any Arguments.
-Arguments: The JSON string; the module which contains the class, the parsed object is instance of."""
+"""
+Parses a python object from a JSON string.
+Every object which should be loaded needs a constuctor that takes no arguments.
+Arguments:
+ - the JSON string
+ - the module which contains all the classes the object is made of.
+"""
 def load(jsonString, module):
 	def _load(d, module):
 		if isinstance(d, list):
@@ -13,11 +19,13 @@ def load(jsonString, module):
 		elif isinstance(d, dict) and "type" in d: #object
 			t = d["type"]
 			try:
-				o = module[t]()
-			except KeyError, e:
-				raise ClassNotFoundError("Class '%s' not found in the given module!" % t)
-			except TypeError, e:
-				raise TypeError("Make sure there is an constuctor that doesn't take any arguments (class: %s)" % t)
+				mod = importlib.import_module(module)
+				cls = getattr(mod, t)
+				o = cls()
+			except AttributeError as e:
+				raise ClassNotFoundError("Class '%s' not found in the module '%s'!" % (t,module))
+			except TypeError as e:
+				raise TypeError("Make sure there is a constuctor that doesn't take any arguments (class: %s)" % t)
 			for key in d:
 				if key != "type":
 					setattr(o, key, _load(d[key], module))
@@ -32,30 +40,35 @@ def load(jsonString, module):
 	d = json.loads(jsonString)
 	return _load(d, module)
 
-"""Dumps a python object to a JSON string. Argument: Python object"""
+"""
+Dumps a python object to a JSON string.
+Argument: Python object
+"""
 def dump(obj):
-	def _dump(obj, path):
-		if isinstance(obj, list):
+	def _dump(obj):
+		if isinstance(obj, Enum):
+			return obj.name
+		elif isinstance(obj, list):
 			l = []
-			i = 0
 			for item in obj:
-				l.append(_dump(item, path + "/[" + str(i) + "]"))
-				i+=1
+				l.append(_dump(item))
 			return l
 		elif isinstance(obj, dict): #dict
 			rd = {}
 			for key in obj:
-				rd[key] = _dump(obj[key], path + "/" + key)
+				rd[key] = _dump(obj[key])
 			return rd
-		elif isinstance(obj, str) or isinstance(obj, unicode) or isinstance(obj, int) or isinstance(obj, float) or isinstance(obj, long) or isinstance(obj, complex) or isinstance(obj, bool) or type(obj).__name__ == "NoneType":
+		elif isinstance(obj, str) or isinstance(obj, int) or \
+		     isinstance(obj, float) or isinstance(obj, complex) or \
+		     isinstance(obj, bool) or type(obj).__name__ == "NoneType":
 			return obj
-		else:
+		else: #object
 			d = {}
 			d["type"] = obj.__class__.__name__
 			for key in obj.__dict__:
-				d[key] = _dump(obj.__dict__[key], path + "/" + key)
+				d[key] = _dump(obj.__dict__[key])
 			return d
-	return json.dumps(_dump(obj, "/"))
+	return json.dumps(_dump(obj))
 
 class ClassNotFoundError(Exception):
 	"""docstring for ClassNotFoundError"""
@@ -85,9 +98,9 @@ if __name__ == "__main__":
 			self.boolean = True
 
 	t = Test1()
-	print t
-	print ""
+	print(t)
+	print("")
 	j = dump(t)
-	print j
-	print ""
-	print load(j, globals()).two["2"]
+	print(j)
+	print("")
+	print(load(j, '__main__').two["2"])
