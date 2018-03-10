@@ -1,11 +1,13 @@
 PyJSONSerialization
 ===================
 
-This is a small library which serializes python objects to readable JSON files.
+This is a small library which serializes and parses Python objects to and from readable JSON files.
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=toubs&url=https://github.com/Toubs/PyJSONSerialization&title=PyJSONSerialization Library&tags=github&category=software)
+Works with Python 2.7, all other versions not tested.
 
-###Example:
+This example is all Documentation you'll get:
+
+### Example:
 
 ```python
 class Test1(object):
